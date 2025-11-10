@@ -11,7 +11,7 @@ export class Payment {
   amount: number;
 
   @Column()
-  method: string; // cash, card, transfer
+  method: string; 
 
   @CreateDateColumn()
   paymentDate: Date;

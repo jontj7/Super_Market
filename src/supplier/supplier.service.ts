@@ -16,13 +16,11 @@ export class SupplierService {
     private readonly productRepository: Repository<Product>,
   ) {}
 
-  // Crear un nuevo proveedor
   async create(createSupplierDto: CreateSupplierDto): Promise<Supplier> {
     const supplier = this.supplierRepository.create(createSupplierDto);
     return await this.supplierRepository.save(supplier);
   }
 
-  // Obtener todos los proveedores con sus productos
   async findAll(): Promise<Supplier[]> {
     return await this.supplierRepository.find({
       relations: ['products'],
@@ -30,25 +28,23 @@ export class SupplierService {
     });
   }
 
-  // Obtener un proveedor por id
   async findOne(id: number): Promise<Supplier> {
     const supplier = await this.supplierRepository.findOne({
       where: { id },
       relations: ['products'],
     });
 
-    if (!supplier) throw new NotFoundException(`Supplier with ID ${id} not found`);
+    if (!supplier)
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
     return supplier;
   }
 
-  // Actualizar proveedor
   async update(id: number, updateSupplierDto: UpdateSupplierDto): Promise<Supplier> {
     const supplier = await this.findOne(id);
     Object.assign(supplier, updateSupplierDto);
     return await this.supplierRepository.save(supplier);
   }
 
-  // Eliminar proveedor
   async remove(id: number): Promise<void> {
     const supplier = await this.findOne(id);
     await this.supplierRepository.remove(supplier);
