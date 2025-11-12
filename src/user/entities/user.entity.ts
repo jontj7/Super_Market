@@ -16,7 +16,7 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ default: 'cashier' })
+  @Column()
   role: string;
 
   @OneToMany(() => Purchase, (purchase) => purchase.user)

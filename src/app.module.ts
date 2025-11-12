@@ -13,6 +13,7 @@ import { PaymentModule } from './payment/payment.module';
 import { PurchaseDetailsModule } from './purchase_details/purchase_details.module';
 import { UserModule } from './user/user.module';
 import { PurchaseModule } from './purchase/purchase.module'; 
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -38,7 +39,7 @@ import { PurchaseModule } from './purchase/purchase.module';
     AddressModule,
     PurchaseDetailsModule,
     UserModule,         
-    PurchaseModule,  
+    PurchaseModule, AuthModule,  
   ],
   controllers: [AppController],
   providers: [AppService],
