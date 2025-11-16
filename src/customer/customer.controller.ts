@@ -31,4 +31,5 @@ export class CustomerController {
   async remove(@Param('id') id: string) {
     return this.customerService.remove(+id);
   }
+   
 }

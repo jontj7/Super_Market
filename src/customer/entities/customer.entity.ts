@@ -16,8 +16,8 @@ export class Customer {
   @Column({ nullable: true })
   phone: string;
 
-  @OneToMany(() => Address, (address) => address.customer)
-  addresses: Address[];
+  @Column({ default: true })
+  isActive: boolean;
 
   @OneToMany(() => Purchase, (purchase) => purchase.customer)
   purchases: Purchase[];

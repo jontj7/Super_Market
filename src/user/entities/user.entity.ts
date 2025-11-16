@@ -18,10 +18,15 @@ export class User {
 
   @Column()
   role: string;
+  
+  @Column({ default: true })
+  isActive: boolean;
 
   @OneToMany(() => Purchase, (purchase) => purchase.user)
   purchases: Purchase[];
 
   @OneToMany(() => Payment, (payment) => payment.user)
   payments: Payment[];
+
+
 }
