@@ -50,17 +50,12 @@ export class ProductController {
     if (Number.isNaN(parsed)) throw new BadRequestException('Invalid ID');
     return this.productService.update(parsed, updateProductDto);
   }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    const parsed = Number(id);
-    if (Number.isNaN(parsed)) throw new BadRequestException('Invalid ID');
-    return this.productService.remove(parsed);
+ @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.productService.remove(+id);
   }
+   
 
-  // ------------------------------------------
-  // SUBIR IMAGEN AL PRODUCTO
-  // ------------------------------------------
   @Post(':id/upload')
   @UseInterceptors(
     FileInterceptor('file', {

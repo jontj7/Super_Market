@@ -10,9 +10,13 @@ export class ShoppingCart {
   @Column('int')
   quantity: number;
 
+  @Column({ default: true })
+  isActive: boolean;
+
   @ManyToOne(() => Product, (product) => product.cartItems)
   product: Product;
 
   @ManyToOne(() => Customer, (customer) => customer.id, { onDelete: 'CASCADE' })
   customer: Customer;
+
 }

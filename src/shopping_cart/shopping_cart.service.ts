@@ -55,29 +55,57 @@ export class ShoppingCartService {
     return cartItem;
   }
 
-  async update(id: number, dto: UpdateShoppingCartDto): Promise<ShoppingCart> {
-    const cartItem = await this.cartRepository.findOne({ where: { id } });
-    if (!cartItem) throw new NotFoundException('Cart item not found');
+async update(id: number, updateDto: UpdateShoppingCartDto): Promise<ShoppingCart> {
+  const cartItem = await this.cartRepository.findOne({
+    where: { id },
+    relations: ['product', 'customer'],
+  });
 
-    if (dto.quantity !== undefined && dto.quantity <= 0) {
-      throw new BadRequestException('Quantity must be greater than zero');
-    }
-
-    Object.assign(cartItem, dto);
-    return this.cartRepository.save(cartItem);
+  if (!cartItem) {
+    throw new NotFoundException(`Shopping cart item with id ${id} not found`);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.cartRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Cart item #${id} not found`);
-    }
+ 
+  if (updateDto.productId) {
+    const product = await this.productRepository.findOneBy({ id: updateDto.productId });
+    if (!product) throw new NotFoundException(`Product with id ${updateDto.productId} not found`);
+    cartItem.product = product;
   }
 
-  async clearCustomerCart(customerId: number): Promise<void> {
-    const customer = await this.customerRepository.findOne({ where: { id: customerId } });
-    if (!customer) throw new NotFoundException('Customer not found');
+  if (updateDto.customerId) {
+    const customer = await this.customerRepository.findOneBy({ id: updateDto.customerId });
+    if (!customer) throw new NotFoundException(`Customer with id ${updateDto.customerId} not found`);
+    cartItem.customer = customer;
+  }
 
-    await this.cartRepository.delete({ customer });
+  if (updateDto.quantity !== undefined) {
+    cartItem.quantity = updateDto.quantity;
+  }
+
+  const saved = await this.cartRepository.save(cartItem);
+
+  const updated = await this.cartRepository.findOne({
+    where: { id: saved.id },
+    relations: ['product', 'customer'],
+  });
+
+  if (!updated) {
+    throw new NotFoundException(`Failed to retrieve updated cart item`);
+  }
+
+  return updated;
+}
+
+ async remove(id: number): Promise<{ message: string }> {
+    const shopping = await this.findOne(id);
+
+    if (!shopping.isActive) {
+      throw new NotFoundException(`Shopping with id ${id} is already inactive`);
+    }
+
+    shopping.isActive = false;
+    await this.cartRepository.save(shopping);
+
+    return { message: `Shopping with id ${id} has been deactivated` };
   }
 }

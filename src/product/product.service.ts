@@ -100,8 +100,17 @@ export class ProductService {
   /**
    * Elimina producto.
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number): Promise<{ message: string }> {
     const product = await this.findOne(id);
-    await this.productRepository.remove(product);
+
+    if (!product.isActive) {
+      throw new NotFoundException(`Product with id ${id} is already inactive`);
+    }
+
+    product.isActive = false;
+    await this.productRepository.save(product);
+
+    return { message: `Product with id ${id} has been deactivated` };
   }
 }
+
