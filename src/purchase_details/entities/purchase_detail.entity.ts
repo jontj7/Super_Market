@@ -12,6 +12,10 @@ export class PurchaseDetail {
 
   @Column('decimal', { precision: 10, scale: 2 })
   subtotal: number;
+  
+ 
+ @Column({ type: 'boolean', default: true })
+  isActive: boolean;
 
   @ManyToOne(() => Purchase, (purchase) => purchase.details, { onDelete: 'CASCADE' })
   purchase: Purchase;

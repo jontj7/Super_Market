@@ -84,8 +84,17 @@ export class PurchaseService {
     return this.purchaseRepository.save(purchase);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.purchaseRepository.delete(id);
-    if (result.affected === 0) throw new NotFoundException(`Purchase #${id} not found`);
+  async remove(id: number): Promise<{ message: string }> {
+    const purchase = await this.findOne(id);
+
+    if (!purchase.isActive) {
+      throw new NotFoundException(`Purchase with id ${id} is already inactive`);
+    }
+
+    purchase.isActive = false;
+    await this.purchaseRepository.save(purchase);
+    return { message: `Purchase with id ${id} has been deactivated` };
   }
 }
+
+

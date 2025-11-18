@@ -13,6 +13,9 @@ export class Payment {
   @Column()
   method: string; 
 
+   @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
   @CreateDateColumn()
   paymentDate: Date;
 

@@ -103,17 +103,23 @@ export class PurchaseDetailsService {
       detail,
     };
   }
+  
+  
+async remove(id: number): Promise<{ message: string }> {
+  const response = await this.findOne(id);
+  const detail = response.detail; 
 
-  async remove(id: number) {
-    const detail = await this.purchaseDetailRepository.findOne({ where: { id } });
-    if (!detail) throw new NotFoundException(`PurchaseDetail ID ${id} not found`);
-
-    await this.purchaseDetailRepository.remove(detail);
-
-    return {
-      message: 'Purchase detail deleted successfully',
-      status: HttpStatus.OK,
-      ok: true,
-    };
+  if (!detail.isActive) {
+    throw new NotFoundException(`Purchase with id ${id} is already inactive`);
   }
+
+  detail.isActive = false;
+  await this.purchaseRepository.save(detail);
+  return { message: `Purchase with id ${id} has been deactivated` };
 }
+
+}
+
+
+
+ 

@@ -39,8 +39,8 @@ export class PurchaseDetailsController {
     return this.purchaseDetailsService.update(id, updatePurchaseDetailDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.purchaseDetailsService.remove(id);
+ @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.purchaseDetailsService.remove(+id);
   }
 }
