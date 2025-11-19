@@ -1,8 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateProductDto } from './create-product.dto';
-import { IsOptional, IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
-export class UpdateProductDto extends PartialType(CreateProductDto) {
+export class UpdateProductDto {
   @IsOptional()
   @IsString()
   name?: string;
@@ -11,23 +10,26 @@ export class UpdateProductDto extends PartialType(CreateProductDto) {
   @IsString()
   description?: string;
 
+  @Transform(({ value }) => value !== undefined ? Number(value) : undefined)
   @IsOptional()
   @IsNumber()
   price?: number;
 
+  @Transform(({ value }) => value !== undefined ? Number(value) : undefined)
   @IsOptional()
   @IsNumber()
   stock?: number;
 
+  @Transform(({ value }) => value !== undefined ? Number(value) : undefined)
   @IsOptional()
   @IsNumber()
   categoryId?: number;
 
+  @Transform(({ value }) => value !== undefined ? Number(value) : undefined)
   @IsOptional()
   @IsNumber()
   supplierId?: number;
 
-    // nueva propiedad opcional (si decides crear con URL ya provista)
   @IsOptional()
   @IsString()
   imageUrl?: string;
