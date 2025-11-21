@@ -21,30 +21,37 @@ export class PurchaseDetailsService {
   ) {}
 
   async create(createPurchaseDetailDto: CreatePurchaseDetailDto) {
-    const { purchaseId, productId, quantity, subtotal } = createPurchaseDetailDto;
+  const { purchaseId, productId, quantity, subtotal } = createPurchaseDetailDto;
 
-    const purchase = await this.purchaseRepository.findOne({ where: { id: purchaseId } });
-    if (!purchase) throw new NotFoundException(`Purchase ID ${purchaseId} not found`);
+  const purchase = await this.purchaseRepository.findOne({ where: { id: purchaseId } });
+  if (!purchase) throw new NotFoundException(`Purchase ID ${purchaseId} not found`);
 
-    const product = await this.productRepository.findOne({ where: { id: productId } });
-    if (!product) throw new NotFoundException(`Product ID ${productId} not found`);
+  const product = await this.productRepository.findOne({ where: { id: productId } });
+  if (!product) throw new NotFoundException(`Product ID ${productId} not found`);
 
-    const detail = this.purchaseDetailRepository.create({
-      quantity,
-      subtotal,
-      purchase,
-      product,
-    });
-
-    await this.purchaseDetailRepository.save(detail);
-
-    return {
-      message: 'Purchase detail created successfully',
-      status: HttpStatus.CREATED,
-      ok: true,
-      detail,
-    };
+  if (product.stock < quantity) {
+    throw new Error(`Not enough stock for product ${product.name}`);
   }
+
+  product.stock -= quantity;
+  await this.productRepository.save(product);
+
+  const detail = this.purchaseDetailRepository.create({
+    quantity,
+    subtotal,
+    purchase,
+    product,
+  });
+
+  await this.purchaseDetailRepository.save(detail);
+
+  return {
+    message: 'Purchase detail created successfully',
+    status: HttpStatus.CREATED,
+    ok: true,
+    detail,
+  };
+}
 
   async findAll() {
     const details = await this.purchaseDetailRepository.find({
@@ -114,7 +121,7 @@ async remove(id: number): Promise<{ message: string }> {
   }
 
   detail.isActive = false;
-  await this.purchaseRepository.save(detail);
+  await this.purchaseDetailRepository.save(detail);
   return { message: `Purchase with id ${id} has been deactivated` };
 }
 

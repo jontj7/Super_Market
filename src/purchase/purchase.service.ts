@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Purchase } from './entities/purchase.entity';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto } from './dto/update-purchase.dto';
@@ -14,50 +14,79 @@ export class PurchaseService {
   constructor(
     @InjectRepository(Purchase)
     private readonly purchaseRepository: Repository<Purchase>,
+
     @InjectRepository(Customer)
     private readonly customerRepository: Repository<Customer>,
+
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
     @InjectRepository(PurchaseDetail)
     private readonly detailRepository: Repository<PurchaseDetail>,
+
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+
+    private readonly dataSource: DataSource,
   ) {}
 
   async create(createPurchaseDto: CreatePurchaseDto): Promise<Purchase> {
-    const { customerId, userId, total, details } = createPurchaseDto;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Buscar relaciones
-    const customer = await this.customerRepository.findOne({ where: { id: customerId } });
-    if (!customer) throw new NotFoundException('Customer not found');
+    try {
+      const { customerId, userId, total, details } = createPurchaseDto;
 
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
+      // Obtener customer y user
+      const customer = await queryRunner.manager.findOne(Customer, { where: { id: customerId } });
+      if (!customer) throw new NotFoundException('Customer not found');
 
-    // Crear entidad principal
-    const purchase = this.purchaseRepository.create({
-      customer,
-      user,
-      total,
-    });
+      const user = await queryRunner.manager.findOne(User, { where: { id: userId } });
+      if (!user) throw new NotFoundException('User not found');
 
-    // Crear detalles
-    const detailEntities: PurchaseDetail[] = [];
-    for (const d of details) {
-      const product = await this.productRepository.findOne({ where: { id: d.productId } });
-      if (!product) throw new NotFoundException(`Product #${d.productId} not found`);
+      // Crear compra
+      const purchase = queryRunner.manager.create(Purchase, { customer, user, total });
 
-      const detail = this.detailRepository.create({
-        product,
-        quantity: d.quantity,
-        subtotal: d.subtotal, 
-      });
-      detailEntities.push(detail);
+      const detailEntities: PurchaseDetail[] = [];
+
+      // Iterar detalles de la compra
+      for (const d of details) {
+        const product = await queryRunner.manager.findOne(Product, { where: { id: d.productId } });
+        if (!product) throw new NotFoundException(`Product #${d.productId} not found`);
+
+        if (product.stock < d.quantity) {
+          throw new Error(`Not enough stock for product ${product.name}`);
+        }
+
+        // Restar stock y guardar
+        product.stock -= d.quantity;
+        await queryRunner.manager.save(product);
+
+        // Crear detalle
+        const detail = queryRunner.manager.create(PurchaseDetail, {
+          product,
+          quantity: d.quantity,
+          subtotal: d.subtotal,
+        });
+
+        detailEntities.push(detail);
+      }
+
+      // Asignar detalles a la compra
+      purchase.details = detailEntities;
+
+      // Guardar compra y detalles
+      const savedPurchase = await queryRunner.manager.save(purchase);
+
+      await queryRunner.commitTransaction();
+      return savedPurchase;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-
-    purchase.details = detailEntities;
-
-    return await this.purchaseRepository.save(purchase);
   }
 
   async findAll(): Promise<Purchase[]> {

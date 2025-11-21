@@ -21,8 +21,6 @@ export class Purchase {
   @ManyToOne(() => Customer, (customer) => customer.purchases)
   customer: Customer;
 
-  
-
   @ManyToOne(() => User, (user) => user.purchases)
   user: User;
 
