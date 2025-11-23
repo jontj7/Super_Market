@@ -23,18 +23,19 @@ import { AuthModule } from './auth/auth.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
 
-    // TypeORM config (ajusta env vars en .env)
+    // TypeORM config para Render (Postgres) — opción rápida para escuela
     TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST,
-      port: +(process.env.DB_PORT ?? 3306),
-      username: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
+      type: 'postgres',
+      url: process.env.DATABASE_URL, // usa la URL completa de Render
       logging: true,
-      synchronize: true, // recomendable false en producción
+      synchronize: true, // crea tablas automáticamente (ok para pruebas/escuela)
       autoLoadEntities: true,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      extra: {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      },
     }),
 
     // Servir archivos estáticos (uploads) en /uploads/<filename>
@@ -43,7 +44,7 @@ import { AuthModule } from './auth/auth.module';
       serveRoot: '/uploads',
     }),
 
-    // Tus módulos
+    // Módulos de la app
     ProductModule,
     PaymentModule,
     CustomerModule,
