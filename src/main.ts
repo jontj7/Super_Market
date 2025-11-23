@@ -9,7 +9,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const corsOptions: CorsOptions = {
-    // Ajusta el origen a tu frontend o usa '*' temporalmente
     origin: ['http://localhost:5173', 'http://localhost:3000'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Accept, Authorization',
@@ -18,17 +17,17 @@ async function bootstrap() {
 
   app.enableCors(corsOptions);
 
-  // Habilite gg validación global con class-validator / class-transformer
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // elimine propiedades no definidas en DTOs
-      forbidNonWhitelisted: false, // true lanza error si llegan campos extra
-      transform: true, // transforma payloads a los tipos definidos en DTOs
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
     }),
   );
 
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  logger.log(`Server running on http://localhost:${port}`);
+  const port = Number(process.env.PORT) || 3000;
+  // IMPORTANTE: escuchar en 0.0.0.0 para que Render detecte el puerto
+  await app.listen(port, '0.0.0.0');
+  logger.log(`Server running on port ${port}`);
 }
 bootstrap();

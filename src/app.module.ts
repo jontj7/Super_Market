@@ -26,16 +26,22 @@ import { AuthModule } from './auth/auth.module';
     // TypeORM config para Render (Postgres) — opción rápida para escuela
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL, // usa la URL completa de Render
+      url: process.env.DATABASE_URL,
       logging: true,
-      synchronize: true, // crea tablas automáticamente (ok para pruebas/escuela)
+      synchronize: true, // ok para escuela; cambia a false y usa migraciones cuando vayas a prod serio
       autoLoadEntities: true,
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      extra: {
-        ssl: {
-          rejectUnauthorized: false,
-        },
-      },
+      // Configura ssl condicional: si DATABASE_SSL === 'true' usa ssl con rejectUnauthorized=false,
+      // si no, no pases ssl (pg realizará conexión sin SSL)
+      ...(process.env.DATABASE_SSL === 'true'
+        ? {
+            extra: {
+              ssl: {
+                rejectUnauthorized: false,
+              },
+            },
+          }
+        : {}),
     }),
 
     // Servir archivos estáticos (uploads) en /uploads/<filename>
