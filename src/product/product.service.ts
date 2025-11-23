@@ -20,23 +20,33 @@ export class ProductService {
     private readonly supplierRepository: Repository<Supplier>,
   ) {}
 
+
+ 
   async create(createProductDto: CreateProductDto): Promise<Product> {
-    const { categoryId, supplierId, ...rest } = createProductDto;
-    const product = this.productRepository.create(rest);
+    const { categoryId, supplierId, imageUrl, ...data } = createProductDto;
+
+
+    const product = this.productRepository.create({
+      ...data,
+      imageUrl: imageUrl ?? null,
+      isActive: true,
+    });
 
     if (categoryId) {
-      product.category = await this.categoryRepository.findOneBy({ id: categoryId });
+      const category = await this.categoryRepository.findOneBy({ id: categoryId });
+      if (category) product.category = category;
     }
 
     if (supplierId) {
-      product.supplier = await this.supplierRepository.findOneBy({ id: supplierId });
+      const supplier = await this.supplierRepository.findOneBy({ id: supplierId });
+      if (supplier) product.supplier = supplier;
     }
 
-    return await this.productRepository.save(product);
+    return this.productRepository.save(product);
   }
 
   async findAll(): Promise<Product[]> {
-    return await this.productRepository.find({
+    return this.productRepository.find({
       relations: ['category', 'supplier'],
       order: { id: 'ASC' },
     });
@@ -45,31 +55,59 @@ export class ProductService {
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
-      relations: ['category', 'supplier', 'details', 'cartItems'],
+      relations: ['category', 'supplier'],
     });
-    if (!product) throw new NotFoundException(`Product with ID ${id} not found`);
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
     return product;
   }
 
+
   async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.findOne(id);
-    const { categoryId, supplierId, ...rest } = updateProductDto;
+    const { categoryId, supplierId, imageUrl, ...rest } = updateProductDto;
 
     Object.assign(product, rest);
 
-    if (categoryId) {
-      product.category = await this.categoryRepository.findOneBy({ id: categoryId });
+
+    if (categoryId !== undefined) {
+      const category = await this.categoryRepository.findOneBy({ id: categoryId });
+      product.category = category ?? null;
     }
 
-    if (supplierId) {
-      product.supplier = await this.supplierRepository.findOneBy({ id: supplierId });
+    if (supplierId !== undefined) {
+      const supplier = await this.supplierRepository.findOneBy({ id: supplierId });
+      product.supplier = supplier ?? null;
     }
 
-    return await this.productRepository.save(product);
+    if (imageUrl !== undefined) {
+      product.imageUrl = imageUrl;
+    }
+
+    return this.productRepository.save(product);
   }
 
-  async remove(id: number): Promise<void> {
+
+  async updateImageUrl(id: number, imageUrl: string): Promise<Product> {
     const product = await this.findOne(id);
-    await this.productRepository.remove(product);
+    product.imageUrl = imageUrl;
+    return this.productRepository.save(product);
+  }
+
+  
+  async remove(id: number): Promise<{ message: string }> {
+    const product = await this.findOne(id);
+
+    if (!product.isActive) {
+      throw new NotFoundException(`Product with id ${id} is already inactive`);
+    }
+
+    product.isActive = false;
+    await this.productRepository.save(product);
+
+    return { message: `Product with id ${id} has been deactivated` };
   }
 }

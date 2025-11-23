@@ -4,6 +4,7 @@ import { Supplier } from 'src/supplier/entities/supplier.entity';
 import { PurchaseDetail } from 'src/purchase_details/entities/purchase_detail.entity';
 import { ShoppingCart } from 'src/shopping_cart/entities/shopping_cart.entity';
 
+
 @Entity({ name: 'products' })
 export class Product {
   @PrimaryGeneratedColumn()
@@ -15,13 +16,25 @@ export class Product {
   @Column({ type: 'varchar', length: 255, nullable: true })
   description: string;
 
-  @Column('decimal', { precision: 10, scale: 2 })
-  price: number;
+  @Column('decimal', { 
+  precision: 10, 
+  scale: 2,
+  transformer: {
+    to: (value: number) => value,
+    from: (value: string) => parseFloat(value),
+  }
+})
+price: number;
 
   @Column('int', { default: 0 })
   stock: number;
 
-  // Relaciones
+  @Column({ type: 'varchar', length: 1000, nullable: true })
+  imageUrl: string | null;
+
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+
 @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL', nullable: true })
 category: Category | null;
 

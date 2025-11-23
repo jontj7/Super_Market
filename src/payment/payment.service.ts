@@ -57,8 +57,16 @@ export class PaymentService {
     return this.paymentRepository.save(payment);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.paymentRepository.delete(id);
-    if (result.affected === 0) throw new NotFoundException(`Payment #${id} not found`);
+ async remove(id: number): Promise<{ message: string }> {
+    const payment = await this.findOne(id);
+
+    if (!payment.isActive) {
+      throw new NotFoundException(`Payment with id ${id} is already inactive`);
+    }
+
+    payment.isActive = false;
+    await this.paymentRepository.save(payment);
+    return { message: `Payment with id ${id} has been deactivated` };
   }
 }
+

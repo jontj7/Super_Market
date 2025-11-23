@@ -28,12 +28,8 @@ export class ShoppingCartController {
   }
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.shoppingCartService.remove(id);
+  async remove(@Param('id') id: string) {
+    return this.shoppingCartService.remove(+id);
   }
-
-  @Delete('clear/:customerId')
-  clearCart(@Param('customerId', ParseIntPipe) customerId: number) {
-    return this.shoppingCartService.clearCustomerCart(customerId);
-  }
+   
 }

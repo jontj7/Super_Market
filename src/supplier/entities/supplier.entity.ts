@@ -17,6 +17,9 @@ export class Supplier {
 
   @Column()
   email: string;
+  
+  @Column({ default: true })
+  isActive: boolean;
 
   @OneToMany(() => Product, (product) => product.supplier)
   products: Product[];

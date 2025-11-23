@@ -45,8 +45,16 @@ export class SupplierService {
     return await this.supplierRepository.save(supplier);
   }
 
-  async remove(id: number): Promise<void> {
+ async remove(id: number): Promise<{ message: string }> {
     const supplier = await this.findOne(id);
-    await this.supplierRepository.remove(supplier);
+
+    if (!supplier.isActive) {
+      throw new NotFoundException(`Supplier with id ${id} is already inactive`);
+    }
+
+    supplier.isActive = false;
+    await this.supplierRepository.save(supplier);
+
+    return { message: `Supplier with id ${id} has been deactivated` };
   }
 }

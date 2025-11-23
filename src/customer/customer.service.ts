@@ -12,40 +12,44 @@ export class CustomerService {
     private readonly customerRepository: Repository<Customer>,
   ) {}
 
-  // Create new customer
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
     const customer = this.customerRepository.create(createCustomerDto);
     return await this.customerRepository.save(customer);
   }
 
-  // Get all customers
   async findAll(): Promise<Customer[]> {
-    return await this.customerRepository.find({
-      relations: ['addresses', 'purchases'],
-    });
+    return await this.customerRepository.find();
   }
 
-  // Get one customer by ID
   async findOne(id: number): Promise<Customer> {
     const customer = await this.customerRepository.findOne({
-      where: { id },
-      relations: ['addresses', 'purchases'],
+      where: { id, isActive: true },
     });
 
-    if (!customer) throw new NotFoundException(`Customer with id ${id} not found`);
+    if (!customer) {
+      throw new NotFoundException(`Customer with id ${id} not found`);
+    }
+
     return customer;
   }
 
-  // Update customer
   async update(id: number, updateCustomerDto: UpdateCustomerDto): Promise<Customer> {
     const customer = await this.findOne(id);
     Object.assign(customer, updateCustomerDto);
     return await this.customerRepository.save(customer);
   }
 
-  // Delete customer
-  async remove(id: number): Promise<void> {
+ async remove(id: number): Promise<{ message: string }> {
     const customer = await this.findOne(id);
-    await this.customerRepository.remove(customer);
+
+    if (!customer.isActive) {
+      throw new NotFoundException(`Customer with id ${id} is already inactive`);
+    }
+
+    customer.isActive = false;
+    await this.customerRepository.save(customer);
+
+    return { message: `User with id ${id} has been deactivated` };
   }
 }
+

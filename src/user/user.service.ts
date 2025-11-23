@@ -56,9 +56,17 @@ export class UserService {
     return await this.userRepository.save(user);
   }
 
-  // Delete user
-  async remove(id: number): Promise<void> {
+ async remove(id: number): Promise<{ message: string }> {
     const user = await this.findOne(id);
-    await this.userRepository.remove(user);
+
+    if (!user.isActive) {
+      throw new NotFoundException(`User with id ${id} is already inactive`);
+    }
+
+    user.isActive = false;
+    await this.userRepository.save(user);
+
+    return { message: `User with id ${id} has been deactivated` };
   }
 }
+

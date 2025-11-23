@@ -15,6 +15,9 @@ export class Purchase {
   @Column('decimal', { precision: 10, scale: 2 })
   total: number;
 
+   @Column({ type: 'boolean', default: true })
+  isActive: boolean;
+  
   @ManyToOne(() => Customer, (customer) => customer.purchases)
   customer: Customer;
 

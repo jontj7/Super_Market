@@ -21,30 +21,37 @@ export class PurchaseDetailsService {
   ) {}
 
   async create(createPurchaseDetailDto: CreatePurchaseDetailDto) {
-    const { purchaseId, productId, quantity, subtotal } = createPurchaseDetailDto;
+  const { purchaseId, productId, quantity, subtotal } = createPurchaseDetailDto;
 
-    const purchase = await this.purchaseRepository.findOne({ where: { id: purchaseId } });
-    if (!purchase) throw new NotFoundException(`Purchase ID ${purchaseId} not found`);
+  const purchase = await this.purchaseRepository.findOne({ where: { id: purchaseId } });
+  if (!purchase) throw new NotFoundException(`Purchase ID ${purchaseId} not found`);
 
-    const product = await this.productRepository.findOne({ where: { id: productId } });
-    if (!product) throw new NotFoundException(`Product ID ${productId} not found`);
+  const product = await this.productRepository.findOne({ where: { id: productId } });
+  if (!product) throw new NotFoundException(`Product ID ${productId} not found`);
 
-    const detail = this.purchaseDetailRepository.create({
-      quantity,
-      subtotal,
-      purchase,
-      product,
-    });
-
-    await this.purchaseDetailRepository.save(detail);
-
-    return {
-      message: 'Purchase detail created successfully',
-      status: HttpStatus.CREATED,
-      ok: true,
-      detail,
-    };
+  if (product.stock < quantity) {
+    throw new Error(`Not enough stock for product ${product.name}`);
   }
+
+  product.stock -= quantity;
+  await this.productRepository.save(product);
+
+  const detail = this.purchaseDetailRepository.create({
+    quantity,
+    subtotal,
+    purchase,
+    product,
+  });
+
+  await this.purchaseDetailRepository.save(detail);
+
+  return {
+    message: 'Purchase detail created successfully',
+    status: HttpStatus.CREATED,
+    ok: true,
+    detail,
+  };
+}
 
   async findAll() {
     const details = await this.purchaseDetailRepository.find({
@@ -103,17 +110,23 @@ export class PurchaseDetailsService {
       detail,
     };
   }
+  
+  
+async remove(id: number): Promise<{ message: string }> {
+  const response = await this.findOne(id);
+  const detail = response.detail; 
 
-  async remove(id: number) {
-    const detail = await this.purchaseDetailRepository.findOne({ where: { id } });
-    if (!detail) throw new NotFoundException(`PurchaseDetail ID ${id} not found`);
-
-    await this.purchaseDetailRepository.remove(detail);
-
-    return {
-      message: 'Purchase detail deleted successfully',
-      status: HttpStatus.OK,
-      ok: true,
-    };
+  if (!detail.isActive) {
+    throw new NotFoundException(`Purchase with id ${id} is already inactive`);
   }
+
+  detail.isActive = false;
+  await this.purchaseDetailRepository.save(detail);
+  return { message: `Purchase with id ${id} has been deactivated` };
 }
+
+}
+
+
+
+ 

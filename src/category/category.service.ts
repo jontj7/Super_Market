@@ -48,9 +48,17 @@ export class CategoryService {
     return await this.categoryRepository.save(category);
   }
 
-  // Eliminar categoría
-  async remove(id: number): Promise<void> {
+
+ async remove(id: number): Promise<{ message: string }> {
     const category = await this.findOne(id);
-    await this.categoryRepository.remove(category);
+
+    if (!category.isActive) {
+      throw new NotFoundException(`Category with id ${id} is already inactive`);
+    }
+
+    category.isActive = false;
+    await this.categoryRepository.save(category);
+
+    return { message: `Category with id ${id} has been deactivated` };
   }
 }
